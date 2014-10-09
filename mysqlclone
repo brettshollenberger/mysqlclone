@@ -1,0 +1,43 @@
+#! /usr/bin/env ruby
+
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+    opts.banner = "Usage: mysqlclone [connection options]"
+
+    opts.on("-h HOST", "--host", String, "Host (e.g. localhost)") do |host|
+      options[:host] = host
+    end
+
+    opts.on("-u USERNAME", "--username", String, "Username") do |username|
+      options[:username] = username
+    end
+
+    opts.on("-d DATABASE", "--database", String, "Database") do |database|
+      options[:database] = database
+    end
+
+    opts.on("-t TABLE", "--table", String, "Table") do |table|
+      options[:table] = table
+    end
+
+    opts.on("-b BACKUPNAME", "--backup", String, "Backup Name") do |backup|
+      options[:backup_name] = backup
+    end
+end.parse!
+
+backup_name = options[:backup_name] || "#{options[:table]}_backup"
+
+sql = <<-SQL
+  CREATE TABLE #{backup_name}
+  LIKE #{options[:table]};
+
+  INSERT #{backup_name}
+  SELECT *
+  FROM #{options[:table]};
+SQL
+
+`mysql -u #{options[:username]} -h #{options[:host]} -p -e "#{sql}" #{options[:database]}`
+
+puts sql
